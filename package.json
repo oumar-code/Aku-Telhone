@@ -1,0 +1,41 @@
+{
+  "name": "aku-telhone",
+  "version": "1.0.0",
+  "description": "Aku Telhone – REST API microservice for telephony and communication features",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand --forceExit",
+    "lint": "eslint src tests --ext .js"
+  },
+  "keywords": [
+    "telephony",
+    "communication",
+    "sms",
+    "calls",
+    "rest-api",
+    "microservice"
+  ],
+  "author": "UMAR ABUBAKAR",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "joi": "^17.13.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ]
+  }
+}
