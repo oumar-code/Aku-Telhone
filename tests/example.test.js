@@ -1,5 +1,7 @@
+'use strict';
+
 const request = require('supertest');
-const express = require('express');
+const createApp = require('../src/app');
 
 const app = express();
 app.get('/', (req, res) => res.send('Aku Telhone service is running!'));

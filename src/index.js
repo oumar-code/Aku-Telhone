@@ -1,11 +1,12 @@
-const express = require('express');
-const app = express();
-const port = process.env.PORT || 8080;
+'use strict';
 
-app.get('/', (req, res) => {
-  res.send('Telhone service is running!');
+const createApp = require('./app');
+const config = require('./config');
+
+const app = createApp();
+
+app.listen(config.port, () => {
+  console.log(`[aku-telhone] Server running on port ${config.port} (${config.nodeEnv})`);
 });
 
-app.listen(port, () => {
-  console.log(`Telhone service listening on port ${port}`);
-});
+module.exports = app;
