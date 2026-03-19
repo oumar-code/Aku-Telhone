@@ -13,3 +13,10 @@ describe('GET /health', () => {
     expect(res.body.service).toBe('aku-telhone');
   });
 });
+
+describe('GET /', () => {
+  it('should return service running message', async () => {
+    const res = await request(app).get('/');
+    expect(res.text).toBe('Aku Telhone service is running!');
+  });
+});
