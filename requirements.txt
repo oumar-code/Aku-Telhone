@@ -9,3 +9,4 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 confluent-kafka==2.5.0
 httpx==0.27.2
+aku-platform-contracts @ git+https://github.com/oumar-code/aku-platform-contracts@v0.1.0
