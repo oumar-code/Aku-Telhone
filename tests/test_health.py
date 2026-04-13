@@ -1,9 +1,24 @@
-import pytest
+"""Smoke tests for the Aku-Telhone /health endpoint."""
+
+from __future__ import annotations
+
+from httpx import AsyncClient
 
 
-@pytest.mark.anyio
-async def test_health(client):
+async def test_health_returns_200(client: AsyncClient) -> None:
     response = await client.get("/health")
     assert response.status_code == 200
+
+
+async def test_health_response_body(client: AsyncClient) -> None:
+    response = await client.get("/health")
     data = response.json()
     assert data["status"] == "ok"
+    assert data["service"] == "Aku-Telhone"
+
+
+async def test_openapi_schema_accessible(client: AsyncClient) -> None:
+    response = await client.get("/api/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+    assert schema["info"]["title"] == "Aku-Telhone"
