@@ -1,3 +1,7 @@
+"""Pytest configuration and shared fixtures for Aku-Telhone tests."""
+
+from __future__ import annotations
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -5,6 +9,10 @@ from app.main import app
 
 
 @pytest.fixture
-async def client():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+async def client() -> AsyncClient:
+    """Async HTTP test client bound to the Aku-Telhone ASGI app."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as ac:
         yield ac

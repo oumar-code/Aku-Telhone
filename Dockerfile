@@ -1,35 +1,65 @@
 # syntax=docker/dockerfile:1
+#
+# Aku-Telhone — eSIM provisioning service
+# Multi-stage build:
+#   builder   — installs all deps (including C extensions for asyncpg, cryptography)
+#   runtime   — minimal production image
 
-# ── Build stage ────────────────────────────────────────────────────────────────
+# ── Stage 1: build ────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
-WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+WORKDIR /build
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+        libssl-dev \
+        git \
+    && rm -rf /var/lib/apt/lists/*
 
-# ── Production stage ───────────────────────────────────────────────────────────
-FROM python:3.11-slim AS production
-WORKDIR /app
+COPY requirements.txt requirements-extra.txt ./
+
+RUN pip install --upgrade pip --no-cache-dir \
+ && pip install --prefix=/install --no-cache-dir \
+        -r requirements.txt \
+        -r requirements-extra.txt
+
+# ── Stage 2: runtime ──────────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
 
 LABEL org.opencontainers.image.source="https://github.com/oumar-code/Aku-Telhone"
-LABEL org.opencontainers.image.version="0.1.0"
+LABEL org.opencontainers.image.version="0.1.1"
+LABEL org.opencontainers.image.description="Aku-Telhone — eSIM provisioning service for the Aku Platform"
 
-RUN apt-get update && apt-get install -y --no-install-recommends libpq5 && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid 1001 aku \
+ && useradd --uid 1001 --gid aku --no-create-home --shell /sbin/nologin aku
+
+WORKDIR /app
 
 COPY --from=builder /install /usr/local
 
-RUN useradd --uid 1001 --create-home aku
-USER aku
-
 COPY --chown=aku:aku app/ ./app/
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER aku
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python - <<'EOF'
+import urllib.request, sys
+try:
+    urllib.request.urlopen("http://localhost:8000/health", timeout=4)
+    sys.exit(0)
+except Exception:
+    sys.exit(1)
+EOF
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
