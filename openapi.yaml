@@ -1,0 +1,578 @@
+components:
+  schemas:
+    DeviceAttestRequest:
+      properties:
+        attestation_token:
+          description: Platform attestation token (e.g. Android Key Attestation, Apple
+            DeviceCheck)
+          title: Attestation Token
+          type: string
+        device_id:
+          description: Device identifier to attest
+          title: Device Id
+          type: string
+        firmware_hash:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Optional SHA-256 of the current firmware image for integrity
+            verification
+          title: Firmware Hash
+        platform:
+          description: 'Device platform: android | ios | embedded'
+          title: Platform
+          type: string
+      required:
+      - device_id
+      - attestation_token
+      - platform
+      title: DeviceAttestRequest
+      type: object
+    DeviceAttestResponse:
+      properties:
+        attested:
+          description: True when Aku-IGHub confirmed the device attestation
+          title: Attested
+          type: boolean
+        attested_at:
+          format: date-time
+          title: Attested At
+          type: string
+        device_id:
+          title: Device Id
+          type: string
+        ighub_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Reference ID assigned by Aku-IGHub for audit correlation
+          title: Ighub Ref
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Human-readable explanation when attested=False
+          title: Reason
+        trust_level:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Trust tier returned by IGHub: FULL | LIMITED | UNTRUSTED'
+          title: Trust Level
+      required:
+      - device_id
+      - attested
+      title: DeviceAttestResponse
+      type: object
+    ESIMDeactivateResponse:
+      properties:
+        deactivated_at:
+          format: date-time
+          title: Deactivated At
+          type: string
+        iccid:
+          title: Iccid
+          type: string
+        message:
+          default: eSIM profile deactivated successfully
+          title: Message
+          type: string
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: DEACTIVATED
+      required:
+      - iccid
+      title: ESIMDeactivateResponse
+      type: object
+    ESIMProfileResponse:
+      properties:
+        activated_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Activated At
+        deactivated_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Deactivated At
+        device_id:
+          title: Device Id
+          type: string
+        eid:
+          title: Eid
+          type: string
+        iccid:
+          title: Iccid
+          type: string
+        last_ota_push_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Ota Push At
+        plan_id:
+          title: Plan Id
+          type: string
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        provisioned_at:
+          format: date-time
+          title: Provisioned At
+          type: string
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+      required:
+      - iccid
+      - eid
+      - device_id
+      - status
+      - plan_id
+      - preferred_network
+      - provisioned_at
+      title: ESIMProfileResponse
+      type: object
+    ESIMProvisionRequest:
+      properties:
+        device_id:
+          description: Unique identifier of the target device
+          title: Device Id
+          type: string
+        eid:
+          description: eUICC Identifier (EID) embedded in the device's eSIM chip
+          title: Eid
+          type: string
+        imei:
+          description: 15-digit IMEI of the device requesting eSIM provisioning
+          maxLength: 15
+          minLength: 15
+          title: Imei
+          type: string
+        metadata:
+          additionalProperties: true
+          description: Optional free-form provisioning context (carrier region, device
+            model, etc.)
+          title: Metadata
+          type: object
+        plan_id:
+          description: MVNO data-plan identifier to associate with the profile
+          title: Plan Id
+          type: string
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+          default: LTE
+          description: Preferred radio access technology for the provisioned profile
+      required:
+      - device_id
+      - imei
+      - eid
+      - plan_id
+      title: ESIMProvisionRequest
+      type: object
+    ESIMProvisionResponse:
+      properties:
+        activation_code:
+          description: LPA activation code (AC$ format) used by the device to download
+            the profile
+          title: Activation Code
+          type: string
+        device_id:
+          title: Device Id
+          type: string
+        eid:
+          description: eUICC Identifier the profile was provisioned to
+          title: Eid
+          type: string
+        iccid:
+          description: "Integrated Circuit Card Identifier \u2014 unique profile ID"
+          title: Iccid
+          type: string
+        plan_id:
+          title: Plan Id
+          type: string
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        provisioned_at:
+          format: date-time
+          title: Provisioned At
+          type: string
+        qr_code_url:
+          description: URL to the scannable QR code that encodes the activation code
+          title: Qr Code Url
+          type: string
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: PENDING
+      required:
+      - iccid
+      - eid
+      - device_id
+      - activation_code
+      - qr_code_url
+      - plan_id
+      - preferred_network
+      title: ESIMProvisionResponse
+      type: object
+    ESIMStatus:
+      enum:
+      - PENDING
+      - ACTIVE
+      - SWITCHING
+      - DEACTIVATED
+      title: ESIMStatus
+      type: string
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    NetworkSwitchAccepted:
+      properties:
+        accepted_at:
+          format: date-time
+          title: Accepted At
+          type: string
+        iccid:
+          title: Iccid
+          type: string
+        message:
+          default: "OTA network switch initiated \u2014 profile status will update\
+            \ to ACTIVE when complete"
+          title: Message
+          type: string
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: SWITCHING
+        task_id:
+          description: Background task identifier for status polling
+          title: Task Id
+          type: string
+      required:
+      - iccid
+      - task_id
+      title: NetworkSwitchAccepted
+      type: object
+    NetworkSwitchRequest:
+      properties:
+        reason:
+          anyOf:
+          - maxLength: 512
+            type: string
+          - type: 'null'
+          description: Human-readable reason for the network switch (audit log)
+          title: Reason
+        target_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+          description: Network technology to switch the eSIM profile to via OTA
+        target_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Optional new MVNO plan to associate after the network switch
+          title: Target Plan Id
+      required:
+      - target_network
+      title: NetworkSwitchRequest
+      type: object
+    NetworkTechnology:
+      enum:
+      - LTE
+      - LTE-M
+      - NB-IoT
+      - 5G
+      title: NetworkTechnology
+      type: string
+    OTAPushAccepted:
+      properties:
+        iccid:
+          title: Iccid
+          type: string
+        message:
+          default: "OTA push queued \u2014 delivery will complete asynchronously"
+          title: Message
+          type: string
+        queued_at:
+          format: date-time
+          title: Queued At
+          type: string
+        status:
+          default: QUEUED
+          title: Status
+          type: string
+        task_id:
+          description: Background task identifier for the OTA push job
+          title: Task Id
+          type: string
+      required:
+      - iccid
+      - task_id
+      title: OTAPushAccepted
+      type: object
+    OTAPushRequest:
+      properties:
+        payload:
+          additionalProperties: true
+          description: Opaque OTA payload forwarded to the MVNO OTA platform
+          title: Payload
+          type: object
+        payload_type:
+          default: PROFILE_UPDATE
+          description: 'OTA payload class: PROFILE_UPDATE | CONFIG_DELTA | DIAGNOSTICS'
+          title: Payload Type
+          type: string
+        priority:
+          default: 5
+          description: Delivery priority (1 = low, 10 = urgent)
+          maximum: 10.0
+          minimum: 1.0
+          title: Priority
+          type: integer
+      title: OTAPushRequest
+      type: object
+    ValidationError:
+      properties:
+        ctx:
+          title: Context
+          type: object
+        input:
+          title: Input
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+info:
+  description: eSIM provisioning and OTA lifecycle management service for the Aku
+    Platform. Handles eSIM profile provisioning, status tracking, OTA network switching,
+    profile deactivation, and device attestation via Aku-IGHub.
+  title: Aku-Telhone
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /api/v1/devices/{device_id}/attest:
+    post:
+      description: 'Forwards the device attestation token (Android Key Attestation,
+        Apple DeviceCheck, or embedded platform token) to Aku-IGHub for cryptographic
+        verification. Returns the trust level assigned by IGHub: FULL | LIMITED |
+        UNTRUSTED. An attested device is a prerequisite for eSIM provisioning in production.'
+      operationId: attest_device_api_v1_devices__device_id__attest_post
+      parameters:
+      - in: path
+        name: device_id
+        required: true
+        schema:
+          title: Device Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceAttestRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceAttestResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Attest a device via Aku-IGHub
+      tags:
+      - devices
+  /api/v1/esim/provision:
+    post:
+      description: Allocates a new eSIM profile via the MVNO SM-DP+ platform. Returns
+        the ICCID, LPA activation code, and QR code URL required by the device to
+        download the profile. Profile status is initially PENDING until the device
+        completes profile download and activates.
+      operationId: provision_esim_api_v1_esim_provision_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ESIMProvisionRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ESIMProvisionResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Provision a new eSIM profile
+      tags:
+      - esim
+  /api/v1/esim/{iccid}:
+    delete:
+      description: "Permanently deactivates the eSIM profile and notifies the MVNO.\
+        \ A deactivated profile cannot be reactivated \u2014 provision a new profile\
+        \ if needed."
+      operationId: deactivate_esim_api_v1_esim__iccid__delete
+      parameters:
+      - in: path
+        name: iccid
+        required: true
+        schema:
+          title: Iccid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ESIMDeactivateResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Deactivate an eSIM profile
+      tags:
+      - esim
+    get:
+      description: 'Returns the current state of an eSIM profile identified by its
+        ICCID. Possible statuses: PENDING | ACTIVE | SWITCHING | DEACTIVATED.'
+      operationId: get_esim_profile_api_v1_esim__iccid__get
+      parameters:
+      - in: path
+        name: iccid
+        required: true
+        schema:
+          title: Iccid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ESIMProfileResponse'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get eSIM profile status
+      tags:
+      - esim
+  /api/v1/esim/{iccid}/ota-push:
+    post:
+      description: Enqueues an OTA payload delivery to the eSIM profile. Returns 202
+        Accepted immediately; the push executes as a background task. Use the task_id
+        to correlate logs or poll an internal status endpoint.
+      operationId: trigger_ota_push_api_v1_esim__iccid__ota_push_post
+      parameters:
+      - in: path
+        name: iccid
+        required: true
+        schema:
+          title: Iccid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OTAPushRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OTAPushAccepted'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Trigger a direct OTA push
+      tags:
+      - esim
+  /api/v1/esim/{iccid}/switch-network:
+    patch:
+      description: Initiates an over-the-air network switch for the eSIM profile.
+        Sets profile status to SWITCHING and returns 202 Accepted immediately. The
+        switch completes asynchronously; poll GET /{iccid} to confirm ACTIVE status.
+      operationId: switch_network_api_v1_esim__iccid__switch_network_patch
+      parameters:
+      - in: path
+        name: iccid
+        required: true
+        schema:
+          title: Iccid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetworkSwitchRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkSwitchAccepted'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: OTA network switch (MVNO)
+      tags:
+      - esim
+  /health:
+    get:
+      operationId: health_health_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                title: Response Health Health Get
+                type: object
+          description: Successful Response
+      summary: Health
+      tags:
+      - ops
