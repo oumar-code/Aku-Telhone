@@ -86,7 +86,7 @@ async def get_esim_profile(iccid: str) -> ESIMProfileResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from None
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitc
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from None
 
     if await esim_service.is_deactivated(iccid):
         raise HTTPException(
@@ -162,7 +162,7 @@ async def deactivate_esim(iccid: str) -> ESIMDeactivateResponse:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from None
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -193,7 +193,7 @@ async def trigger_ota_push(iccid: str, body: OTAPushRequest) -> OTAPushAccepted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from None
 
     if await esim_service.is_deactivated(iccid):
         raise HTTPException(
