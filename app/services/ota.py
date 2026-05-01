@@ -37,6 +37,7 @@ _profile_store: dict[str, dict[str, Any]] = {}
 def _upsert_profile(iccid: str, **updates: Any) -> None:
     """Merge updates into the in-process profile store."""
     existing = _profile_store.setdefault(iccid, {})
+    existing["iccid"] = iccid
     existing.update(updates)
 
 

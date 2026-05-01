@@ -87,7 +87,6 @@ class ESIMService:
 
         _upsert_profile(
             iccid,
-            iccid=iccid,
             eid=request.eid,
             device_id=request.device_id,
             imei=request.imei,
