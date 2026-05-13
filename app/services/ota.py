@@ -13,6 +13,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from app.schemas.connectivity import SubscriptionStatus
+from app.services.platform import platform_service
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -37,6 +40,7 @@ _profile_store: dict[str, dict[str, Any]] = {}
 def _upsert_profile(iccid: str, **updates: Any) -> None:
     """Merge updates into the in-process profile store."""
     existing = _profile_store.setdefault(iccid, {})
+    existing["iccid"] = iccid
     existing.update(updates)
 
 
@@ -114,6 +118,14 @@ class OTAService:
                 last_ota_push_at=now.isoformat(),
                 status="ACTIVE",
             )
+            profile = _profile_store.get(iccid, {})
+            subscription_id = profile.get("subscription_id")
+            if subscription_id:
+                platform_service.update_subscription_status(
+                    subscription_id,
+                    status=SubscriptionStatus.ACTIVE,
+                    activated_at=now,
+                )
 
             _task_registry[task_id].update(
                 {
@@ -183,6 +195,16 @@ class OTAService:
                 updates["plan_id"] = target_plan_id
 
             _upsert_profile(iccid, **updates)
+            profile = _profile_store.get(iccid, {})
+            subscription_id = profile.get("subscription_id")
+            if subscription_id:
+                platform_service.update_subscription_status(
+                    subscription_id,
+                    status=SubscriptionStatus.ACTIVE,
+                    activated_at=now,
+                    preferred_network=target_network,
+                    plan_id=target_plan_id,
+                )
 
             _task_registry[task_id].update(
                 {
@@ -202,6 +224,13 @@ class OTAService:
             )
             # Revert profile status so it is not left in SWITCHING forever
             _upsert_profile(iccid, status="ACTIVE")
+            profile = _profile_store.get(iccid, {})
+            subscription_id = profile.get("subscription_id")
+            if subscription_id:
+                platform_service.update_subscription_status(
+                    subscription_id,
+                    status=SubscriptionStatus.ACTIVE,
+                )
             _task_registry[task_id].update(
                 {
                     "status": "FAILED",

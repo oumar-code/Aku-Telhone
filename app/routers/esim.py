@@ -18,6 +18,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.schemas.connectivity import SubscriptionStatus
 from app.schemas.esim import (
     ESIMDeactivateResponse,
     ESIMProfileResponse,
@@ -31,6 +32,7 @@ from app.schemas.esim import (
 )
 from app.services.esim import esim_service
 from app.services.ota import new_task_id, ota_service
+from app.services.platform import platform_service
 
 logger = logging.getLogger(__name__)
 
@@ -82,11 +84,11 @@ async def provision_esim(body: ESIMProvisionRequest) -> ESIMProvisionResponse:
 async def get_esim_profile(iccid: str) -> ESIMProfileResponse:
     try:
         return await esim_service.get_profile(iccid)
-    except KeyError:
+    except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -107,12 +109,12 @@ async def get_esim_profile(iccid: str) -> ESIMProfileResponse:
 )
 async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitchAccepted:
     try:
-        await esim_service.get_profile(iccid)
-    except KeyError:
+        profile = await esim_service.get_profile(iccid)
+    except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from exc
 
     if await esim_service.is_deactivated(iccid):
         raise HTTPException(
@@ -121,6 +123,11 @@ async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitc
         )
 
     task_id = new_task_id()
+    if profile.subscription_id:
+        platform_service.update_subscription_status(
+            profile.subscription_id,
+            status=SubscriptionStatus.SWITCHING,
+        )
 
     asyncio.create_task(
         ota_service.switch_network(
@@ -157,17 +164,24 @@ async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitc
 )
 async def deactivate_esim(iccid: str) -> ESIMDeactivateResponse:
     try:
-        return await esim_service.deactivate(iccid)
-    except KeyError:
+        response = await esim_service.deactivate(iccid)
+    except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+    profile = await esim_service.get_profile(iccid)
+    if profile.subscription_id:
+        platform_service.update_subscription_status(
+            profile.subscription_id,
+            status=SubscriptionStatus.DEACTIVATED,
+        )
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -189,11 +203,11 @@ async def deactivate_esim(iccid: str) -> ESIMDeactivateResponse:
 async def trigger_ota_push(iccid: str, body: OTAPushRequest) -> OTAPushAccepted:
     try:
         await esim_service.get_profile(iccid)
-    except KeyError:
+    except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"eSIM profile '{iccid}' not found",
-        )
+        ) from exc
 
     if await esim_service.is_deactivated(iccid):
         raise HTTPException(
