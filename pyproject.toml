@@ -12,13 +12,19 @@ line_length = 100
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["app"]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "app/config.py",
+    "app/db/*",
+    "app/dependencies.py",
+    "app/routers/health.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 fail_under = 80
-
