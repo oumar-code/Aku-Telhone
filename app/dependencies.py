@@ -7,11 +7,11 @@ from jose import JWTError, jwt
 from app.config import settings
 
 bearer_scheme = HTTPBearer()
-BearerCredentials = Depends(bearer_scheme)
+bearer_credentials = Depends(bearer_scheme)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = BearerCredentials,
+    credentials: HTTPAuthorizationCredentials = bearer_credentials,
 ) -> dict:
     token = credentials.credentials
     try:
