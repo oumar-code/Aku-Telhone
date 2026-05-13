@@ -83,10 +83,9 @@ Aku-Telhone exposes the provisioning and policy interfaces those services consum
 
 ```bash
 # 1. Copy environment config
-cp /home/runner/work/Aku-Telhone/Aku-Telhone/.env.example /home/runner/work/Aku-Telhone/Aku-Telhone/.env
+cp .env.example .env
 
 # 2. Install dependencies
-cd /home/runner/work/Aku-Telhone/Aku-Telhone
 pip install -r requirements.txt -r requirements-extra.txt -r requirements-dev.txt
 
 # 3. Run the API
@@ -102,7 +101,6 @@ Interactive docs:
 ## Validation
 
 ```bash
-cd /home/runner/work/Aku-Telhone/Aku-Telhone
 ruff check .
 black --check .
 PYTHONPATH=. pytest --cov=app --cov-report=term-missing -v
