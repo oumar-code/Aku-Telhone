@@ -264,6 +264,7 @@ async def test_device_attestation_success_and_validation_errors(
             assert json["requester_service"] == "aku-telhone"
             return httpx.Response(
                 status_code=200,
+                request=httpx.Request("POST", "http://ighub.test/api/v1/devices/attest"),
                 json={"attested": True, "trust_level": "FULL", "ighub_ref": "igh-123"},
             )
 

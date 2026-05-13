@@ -1,412 +1,16 @@
-components:
-  schemas:
-    DeviceAttestRequest:
-      properties:
-        attestation_token:
-          description: Platform attestation token (e.g. Android Key Attestation, Apple
-            DeviceCheck)
-          title: Attestation Token
-          type: string
-        device_id:
-          description: Device identifier to attest
-          title: Device Id
-          type: string
-        firmware_hash:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Optional SHA-256 of the current firmware image for integrity
-            verification
-          title: Firmware Hash
-        platform:
-          description: 'Device platform: android | ios | embedded'
-          title: Platform
-          type: string
-      required:
-      - device_id
-      - attestation_token
-      - platform
-      title: DeviceAttestRequest
-      type: object
-    DeviceAttestResponse:
-      properties:
-        attested:
-          description: True when Aku-IGHub confirmed the device attestation
-          title: Attested
-          type: boolean
-        attested_at:
-          format: date-time
-          title: Attested At
-          type: string
-        device_id:
-          title: Device Id
-          type: string
-        ighub_ref:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Reference ID assigned by Aku-IGHub for audit correlation
-          title: Ighub Ref
-        reason:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Human-readable explanation when attested=False
-          title: Reason
-        trust_level:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: 'Trust tier returned by IGHub: FULL | LIMITED | UNTRUSTED'
-          title: Trust Level
-      required:
-      - device_id
-      - attested
-      title: DeviceAttestResponse
-      type: object
-    ESIMDeactivateResponse:
-      properties:
-        deactivated_at:
-          format: date-time
-          title: Deactivated At
-          type: string
-        iccid:
-          title: Iccid
-          type: string
-        message:
-          default: eSIM profile deactivated successfully
-          title: Message
-          type: string
-        status:
-          $ref: '#/components/schemas/ESIMStatus'
-          default: DEACTIVATED
-      required:
-      - iccid
-      title: ESIMDeactivateResponse
-      type: object
-    ESIMProfileResponse:
-      properties:
-        activated_at:
-          anyOf:
-          - format: date-time
-            type: string
-          - type: 'null'
-          title: Activated At
-        deactivated_at:
-          anyOf:
-          - format: date-time
-            type: string
-          - type: 'null'
-          title: Deactivated At
-        device_id:
-          title: Device Id
-          type: string
-        eid:
-          title: Eid
-          type: string
-        iccid:
-          title: Iccid
-          type: string
-        last_ota_push_at:
-          anyOf:
-          - format: date-time
-            type: string
-          - type: 'null'
-          title: Last Ota Push At
-        plan_id:
-          title: Plan Id
-          type: string
-        preferred_network:
-          $ref: '#/components/schemas/NetworkTechnology'
-        provisioned_at:
-          format: date-time
-          title: Provisioned At
-          type: string
-        status:
-          $ref: '#/components/schemas/ESIMStatus'
-      required:
-      - iccid
-      - eid
-      - device_id
-      - status
-      - plan_id
-      - preferred_network
-      - provisioned_at
-      title: ESIMProfileResponse
-      type: object
-    ESIMProvisionRequest:
-      properties:
-        device_id:
-          description: Unique identifier of the target device
-          title: Device Id
-          type: string
-        eid:
-          description: eUICC Identifier (EID) embedded in the device's eSIM chip
-          title: Eid
-          type: string
-        imei:
-          description: 15-digit IMEI of the device requesting eSIM provisioning
-          maxLength: 15
-          minLength: 15
-          title: Imei
-          type: string
-        metadata:
-          additionalProperties: true
-          description: Optional free-form provisioning context (carrier region, device
-            model, etc.)
-          title: Metadata
-          type: object
-        plan_id:
-          description: MVNO data-plan identifier to associate with the profile
-          title: Plan Id
-          type: string
-        preferred_network:
-          $ref: '#/components/schemas/NetworkTechnology'
-          default: LTE
-          description: Preferred radio access technology for the provisioned profile
-      required:
-      - device_id
-      - imei
-      - eid
-      - plan_id
-      title: ESIMProvisionRequest
-      type: object
-    ESIMProvisionResponse:
-      properties:
-        activation_code:
-          description: LPA activation code (AC$ format) used by the device to download
-            the profile
-          title: Activation Code
-          type: string
-        device_id:
-          title: Device Id
-          type: string
-        eid:
-          description: eUICC Identifier the profile was provisioned to
-          title: Eid
-          type: string
-        iccid:
-          description: "Integrated Circuit Card Identifier \u2014 unique profile ID"
-          title: Iccid
-          type: string
-        plan_id:
-          title: Plan Id
-          type: string
-        preferred_network:
-          $ref: '#/components/schemas/NetworkTechnology'
-        provisioned_at:
-          format: date-time
-          title: Provisioned At
-          type: string
-        qr_code_url:
-          description: URL to the scannable QR code that encodes the activation code
-          title: Qr Code Url
-          type: string
-        status:
-          $ref: '#/components/schemas/ESIMStatus'
-          default: PENDING
-      required:
-      - iccid
-      - eid
-      - device_id
-      - activation_code
-      - qr_code_url
-      - plan_id
-      - preferred_network
-      title: ESIMProvisionResponse
-      type: object
-    ESIMStatus:
-      enum:
-      - PENDING
-      - ACTIVE
-      - SWITCHING
-      - DEACTIVATED
-      title: ESIMStatus
-      type: string
-    HTTPValidationError:
-      properties:
-        detail:
-          items:
-            $ref: '#/components/schemas/ValidationError'
-          title: Detail
-          type: array
-      title: HTTPValidationError
-      type: object
-    NetworkSwitchAccepted:
-      properties:
-        accepted_at:
-          format: date-time
-          title: Accepted At
-          type: string
-        iccid:
-          title: Iccid
-          type: string
-        message:
-          default: "OTA network switch initiated \u2014 profile status will update\
-            \ to ACTIVE when complete"
-          title: Message
-          type: string
-        status:
-          $ref: '#/components/schemas/ESIMStatus'
-          default: SWITCHING
-        task_id:
-          description: Background task identifier for status polling
-          title: Task Id
-          type: string
-      required:
-      - iccid
-      - task_id
-      title: NetworkSwitchAccepted
-      type: object
-    NetworkSwitchRequest:
-      properties:
-        reason:
-          anyOf:
-          - maxLength: 512
-            type: string
-          - type: 'null'
-          description: Human-readable reason for the network switch (audit log)
-          title: Reason
-        target_network:
-          $ref: '#/components/schemas/NetworkTechnology'
-          description: Network technology to switch the eSIM profile to via OTA
-        target_plan_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: Optional new MVNO plan to associate after the network switch
-          title: Target Plan Id
-      required:
-      - target_network
-      title: NetworkSwitchRequest
-      type: object
-    NetworkTechnology:
-      enum:
-      - LTE
-      - LTE-M
-      - NB-IoT
-      - 5G
-      title: NetworkTechnology
-      type: string
-    OTAPushAccepted:
-      properties:
-        iccid:
-          title: Iccid
-          type: string
-        message:
-          default: "OTA push queued \u2014 delivery will complete asynchronously"
-          title: Message
-          type: string
-        queued_at:
-          format: date-time
-          title: Queued At
-          type: string
-        status:
-          default: QUEUED
-          title: Status
-          type: string
-        task_id:
-          description: Background task identifier for the OTA push job
-          title: Task Id
-          type: string
-      required:
-      - iccid
-      - task_id
-      title: OTAPushAccepted
-      type: object
-    OTAPushRequest:
-      properties:
-        payload:
-          additionalProperties: true
-          description: Opaque OTA payload forwarded to the MVNO OTA platform
-          title: Payload
-          type: object
-        payload_type:
-          default: PROFILE_UPDATE
-          description: 'OTA payload class: PROFILE_UPDATE | CONFIG_DELTA | DIAGNOSTICS'
-          title: Payload Type
-          type: string
-        priority:
-          default: 5
-          description: Delivery priority (1 = low, 10 = urgent)
-          maximum: 10.0
-          minimum: 1.0
-          title: Priority
-          type: integer
-      title: OTAPushRequest
-      type: object
-    ValidationError:
-      properties:
-        ctx:
-          title: Context
-          type: object
-        input:
-          title: Input
-        loc:
-          items:
-            anyOf:
-            - type: string
-            - type: integer
-          title: Location
-          type: array
-        msg:
-          title: Message
-          type: string
-        type:
-          title: Error Type
-          type: string
-      required:
-      - loc
-      - msg
-      - type
-      title: ValidationError
-      type: object
-info:
-  description: eSIM provisioning and OTA lifecycle management service for the Aku
-    Platform. Handles eSIM profile provisioning, status tracking, OTA network switching,
-    profile deactivation, and device attestation via Aku-IGHub.
-  title: Aku-Telhone
-  version: 0.1.0
 openapi: 3.1.0
+info:
+  title: Aku-Telhone
+  description: Connectivity orchestration platform for the Aku ecosystem. Handles
+    eSIM and physical SIM lifecycle management, customer onboarding, app-facing activation
+    flows, hub policy integration, observability, and device attestation via Aku-IGHub.
+  version: 0.1.0
 paths:
-  /api/v1/devices/{device_id}/attest:
-    post:
-      description: 'Forwards the device attestation token (Android Key Attestation,
-        Apple DeviceCheck, or embedded platform token) to Aku-IGHub for cryptographic
-        verification. Returns the trust level assigned by IGHub: FULL | LIMITED |
-        UNTRUSTED. An attested device is a prerequisite for eSIM provisioning in production.'
-      operationId: attest_device_api_v1_devices__device_id__attest_post
-      parameters:
-      - in: path
-        name: device_id
-        required: true
-        schema:
-          title: Device Id
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeviceAttestRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeviceAttestResponse'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Attest a device via Aku-IGHub
-      tags:
-      - devices
   /api/v1/esim/provision:
     post:
+      tags:
+      - esim
+      summary: Provision a new eSIM profile
       description: Allocates a new eSIM profile via the MVNO SM-DP+ platform. Returns
         the ICCID, LPA activation code, and QR code URL required by the device to
         download the profile. Profile status is initially PENDING until the device
@@ -420,159 +24,1653 @@ paths:
         required: true
       responses:
         '201':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ESIMProvisionResponse'
-          description: Successful Response
         '422':
+          description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Provision a new eSIM profile
-      tags:
-      - esim
   /api/v1/esim/{iccid}:
-    delete:
-      description: "Permanently deactivates the eSIM profile and notifies the MVNO.\
-        \ A deactivated profile cannot be reactivated \u2014 provision a new profile\
-        \ if needed."
-      operationId: deactivate_esim_api_v1_esim__iccid__delete
-      parameters:
-      - in: path
-        name: iccid
-        required: true
-        schema:
-          title: Iccid
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ESIMDeactivateResponse'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Deactivate an eSIM profile
+    get:
       tags:
       - esim
-    get:
+      summary: Get eSIM profile status
       description: 'Returns the current state of an eSIM profile identified by its
         ICCID. Possible statuses: PENDING | ACTIVE | SWITCHING | DEACTIVATED.'
       operationId: get_esim_profile_api_v1_esim__iccid__get
       parameters:
-      - in: path
-        name: iccid
+      - name: iccid
+        in: path
         required: true
         schema:
-          title: Iccid
           type: string
+          title: Iccid
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ESIMProfileResponse'
-          description: Successful Response
         '422':
+          description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Get eSIM profile status
+    delete:
       tags:
       - esim
-  /api/v1/esim/{iccid}/ota-push:
-    post:
-      description: Enqueues an OTA payload delivery to the eSIM profile. Returns 202
-        Accepted immediately; the push executes as a background task. Use the task_id
-        to correlate logs or poll an internal status endpoint.
-      operationId: trigger_ota_push_api_v1_esim__iccid__ota_push_post
+      summary: Deactivate an eSIM profile
+      description: Permanently deactivates the eSIM profile and notifies the MVNO.
+        A deactivated profile cannot be reactivated — provision a new profile if needed.
+      operationId: deactivate_esim_api_v1_esim__iccid__delete
       parameters:
-      - in: path
-        name: iccid
+      - name: iccid
+        in: path
         required: true
         schema:
-          title: Iccid
           type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OTAPushRequest'
-        required: true
+          title: Iccid
       responses:
-        '202':
+        '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OTAPushAccepted'
-          description: Successful Response
+                $ref: '#/components/schemas/ESIMDeactivateResponse'
         '422':
+          description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Trigger a direct OTA push
-      tags:
-      - esim
   /api/v1/esim/{iccid}/switch-network:
     patch:
+      tags:
+      - esim
+      summary: OTA network switch (MVNO)
       description: Initiates an over-the-air network switch for the eSIM profile.
         Sets profile status to SWITCHING and returns 202 Accepted immediately. The
         switch completes asynchronously; poll GET /{iccid} to confirm ACTIVE status.
       operationId: switch_network_api_v1_esim__iccid__switch_network_patch
       parameters:
-      - in: path
-        name: iccid
+      - name: iccid
+        in: path
         required: true
         schema:
-          title: Iccid
           type: string
+          title: Iccid
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/NetworkSwitchRequest'
-        required: true
       responses:
         '202':
+          description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/NetworkSwitchAccepted'
-          description: Successful Response
         '422':
+          description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: OTA network switch (MVNO)
+  /api/v1/esim/{iccid}/ota-push:
+    post:
       tags:
       - esim
+      summary: Trigger a direct OTA push
+      description: Enqueues an OTA payload delivery to the eSIM profile. Returns 202
+        Accepted immediately; the push executes as a background task. Use the task_id
+        to correlate logs or poll an internal status endpoint.
+      operationId: trigger_ota_push_api_v1_esim__iccid__ota_push_post
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OTAPushRequest'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OTAPushAccepted'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/devices/{device_id}/attest:
+    post:
+      tags:
+      - devices
+      summary: Attest a device via Aku-IGHub
+      description: 'Forwards the device attestation token (Android Key Attestation,
+        Apple DeviceCheck, or embedded platform token) to Aku-IGHub for cryptographic
+        verification. Returns the trust level assigned by IGHub: FULL | LIMITED |
+        UNTRUSTED. An attested device is a prerequisite for eSIM provisioning in production.'
+      operationId: attest_device_api_v1_devices__device_id__attest_post
+      parameters:
+      - name: device_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Device Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceAttestRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceAttestResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers/onboard:
+    post:
+      tags:
+      - customers
+      summary: Onboard a Nigerian-market customer
+      operationId: onboard_customer_api_v1_customers_onboard_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerOnboardingRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfileResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers/{customer_id}:
+    get:
+      tags:
+      - customers
+      summary: Get customer compliance and profile data
+      operationId: get_customer_api_v1_customers__customer_id__get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfileResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/customers/{customer_id}/lines:
+    get:
+      tags:
+      - customers
+      summary: List all customer lines and bundles
+      operationId: get_customer_lines_api_v1_customers__customer_id__lines_get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/inventory:
+    post:
+      tags:
+      - physical-sims
+      summary: Create a physical SIM inventory record
+      operationId: create_inventory_record_api_v1_sims_inventory_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SIMInventoryRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/{iccid}:
+    get:
+      tags:
+      - physical-sims
+      summary: Get a physical SIM record
+      operationId: get_physical_sim_api_v1_sims__iccid__get
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - physical-sims
+      summary: Deactivate a physical SIM
+      operationId: deactivate_physical_sim_api_v1_sims__iccid__delete
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/{iccid}/assign:
+    post:
+      tags:
+      - physical-sims
+      summary: Assign a physical SIM to a customer/device
+      operationId: assign_physical_sim_api_v1_sims__iccid__assign_post
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SIMAssignRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/{iccid}/activate:
+    post:
+      tags:
+      - physical-sims
+      summary: Activate an assigned physical SIM
+      operationId: activate_physical_sim_api_v1_sims__iccid__activate_post
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/{iccid}/suspend:
+    post:
+      tags:
+      - physical-sims
+      summary: Suspend a physical SIM and linked subscription
+      operationId: suspend_physical_sim_api_v1_sims__iccid__suspend_post
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/sims/{iccid}/replace:
+    post:
+      tags:
+      - physical-sims
+      summary: Swap a physical SIM to a replacement SIM
+      operationId: replace_physical_sim_api_v1_sims__iccid__replace_post
+      parameters:
+      - name: iccid
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Iccid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SIMReplaceRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalSIMResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/app/sessions:
+    post:
+      tags:
+      - app
+      summary: Create an Aku-Telhony app session
+      operationId: create_app_session_api_v1_app_sessions_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppSessionRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSessionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/app/customers/{customer_id}/dashboard:
+    get:
+      tags:
+      - app
+      summary: Get customer dashboard data for the Aku-Telhony app
+      operationId: get_dashboard_api_v1_app_customers__customer_id__dashboard_get
+      parameters:
+      - name: customer_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Customer Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/app/subscriptions/{subscription_id}/activation:
+    get:
+      tags:
+      - app
+      summary: Poll activation progress and next steps for a line
+      operationId: get_activation_status_api_v1_app_subscriptions__subscription_id__activation_get
+      parameters:
+      - name: subscription_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Subscription Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationStatusResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/subscriptions/{subscription_id}:
+    get:
+      tags:
+      - platform
+      summary: Get a unified subscription record
+      operationId: get_subscription_api_v1_subscriptions__subscription_id__get
+      parameters:
+      - name: subscription_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Subscription Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/platform/integration-contracts:
+    get:
+      tags:
+      - platform
+      summary: Describe Aku-Telhone service boundaries and integrations
+      operationId: get_integration_contracts_api_v1_platform_integration_contracts_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformIntegrationResponse'
+  /api/v1/platform/hub-policy-sync:
+    post:
+      tags:
+      - platform
+      summary: Sync hub policy and predictive cache hints from IG-Hub/Super Hub
+      operationId: sync_hub_policy_api_v1_platform_hub_policy_sync_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HubPolicySyncRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HubPolicyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/platform/hub-policy-sync/{edge_id}:
+    get:
+      tags:
+      - platform
+      summary: Get the latest synced policy for an Edge Hub
+      operationId: get_hub_policy_api_v1_platform_hub_policy_sync__edge_id__get
+      parameters:
+      - name: edge_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Edge Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HubPolicyResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /readyz:
+    get:
+      tags:
+      - platform
+      summary: Readiness probe for orchestration
+      operationId: readyz_readyz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+  /api/v1/platform/metrics:
+    get:
+      tags:
+      - platform
+      summary: Structured platform metrics snapshot
+      operationId: get_platform_metrics_api_v1_platform_metrics_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformMetricsResponse'
+  /metrics:
+    get:
+      tags:
+      - platform
+      summary: Prometheus metrics
+      operationId: metrics_metrics_get
+      responses:
+        '200':
+          description: Successful Response
   /health:
     get:
+      tags:
+      - ops
+      summary: Health
       operationId: health_health_get
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
                 additionalProperties:
                   type: string
-                title: Response Health Health Get
                 type: object
-          description: Successful Response
-      summary: Health
-      tags:
-      - ops
+                title: Response Health Health Get
+components:
+  schemas:
+    ActivationStatusResponse:
+      properties:
+        subscription:
+          $ref: '#/components/schemas/SubscriptionResponse'
+        ready_for_use:
+          type: boolean
+          title: Ready For Use
+        next_step:
+          type: string
+          title: Next Step
+      type: object
+      required:
+      - subscription
+      - ready_for_use
+      - next_step
+      title: ActivationStatusResponse
+    AppSessionRequest:
+      properties:
+        customer_id:
+          type: string
+          title: Customer Id
+        channel:
+          type: string
+          title: Channel
+          description: 'Client channel: mobile | web'
+          default: mobile
+        device_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Device Id
+      type: object
+      required:
+      - customer_id
+      title: AppSessionRequest
+    AppSessionResponse:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        customer_id:
+          type: string
+          title: Customer Id
+        channel:
+          type: string
+          title: Channel
+        issued_at:
+          type: string
+          format: date-time
+          title: Issued At
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+      type: object
+      required:
+      - session_id
+      - customer_id
+      - channel
+      - expires_at
+      title: AppSessionResponse
+    BundleInfo:
+      properties:
+        bundle_id:
+          type: string
+          title: Bundle Id
+        name:
+          type: string
+          title: Name
+        category:
+          type: string
+          title: Category
+          default: education
+        active:
+          type: boolean
+          title: Active
+          default: true
+      type: object
+      required:
+      - bundle_id
+      - name
+      title: BundleInfo
+    ComplianceStatus:
+      type: string
+      enum:
+      - PENDING_REVIEW
+      - APPROVED
+      - RESTRICTED
+      title: ComplianceStatus
+    CustomerOnboardingRequest:
+      properties:
+        full_name:
+          type: string
+          minLength: 3
+          title: Full Name
+          description: Subscriber full legal name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+          description: Primary email used by the Aku-Telhony app
+        phone_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone Number
+          description: Primary reachable phone number
+        nin_reference:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nin Reference
+          description: Opaque NIN/KYC reference from the compliance provider; raw
+            NIN is not stored
+        role:
+          $ref: '#/components/schemas/UserRole'
+          description: Subscriber role for policy enforcement
+          default: STUDENT
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+          description: Bundle identifiers the subscriber is eligible to activate
+        metadata:
+          additionalProperties: true
+          type: object
+          title: Metadata
+          description: Free-form onboarding context such as state, school, or partner
+            channel
+      type: object
+      required:
+      - full_name
+      title: CustomerOnboardingRequest
+    CustomerProfileResponse:
+      properties:
+        customer_id:
+          type: string
+          title: Customer Id
+        full_name:
+          type: string
+          title: Full Name
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        phone_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone Number
+        role:
+          $ref: '#/components/schemas/UserRole'
+        kyc_status:
+          $ref: '#/components/schemas/KYCStatus'
+        compliance_status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        nin_reference:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nin Reference
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - customer_id
+      - full_name
+      - role
+      - kyc_status
+      - compliance_status
+      title: CustomerProfileResponse
+    DeviceAttestRequest:
+      properties:
+        device_id:
+          type: string
+          title: Device Id
+          description: Device identifier to attest
+        attestation_token:
+          type: string
+          title: Attestation Token
+          description: Platform attestation token (e.g. Android Key Attestation, Apple
+            DeviceCheck)
+        platform:
+          type: string
+          title: Platform
+          description: 'Device platform: android | ios | embedded'
+        firmware_hash:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firmware Hash
+          description: Optional SHA-256 of the current firmware image for integrity
+            verification
+      type: object
+      required:
+      - device_id
+      - attestation_token
+      - platform
+      title: DeviceAttestRequest
+    DeviceAttestResponse:
+      properties:
+        device_id:
+          type: string
+          title: Device Id
+        attested:
+          type: boolean
+          title: Attested
+          description: True when Aku-IGHub confirmed the device attestation
+        trust_level:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Trust Level
+          description: 'Trust tier returned by IGHub: FULL | LIMITED | UNTRUSTED'
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+          description: Human-readable explanation when attested=False
+        attested_at:
+          type: string
+          format: date-time
+          title: Attested At
+        ighub_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ighub Ref
+          description: Reference ID assigned by Aku-IGHub for audit correlation
+      type: object
+      required:
+      - device_id
+      - attested
+      title: DeviceAttestResponse
+    ESIMDeactivateResponse:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: DEACTIVATED
+        deactivated_at:
+          type: string
+          format: date-time
+          title: Deactivated At
+        message:
+          type: string
+          title: Message
+          default: eSIM profile deactivated successfully
+      type: object
+      required:
+      - iccid
+      title: ESIMDeactivateResponse
+    ESIMProfileResponse:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+        eid:
+          type: string
+          title: Eid
+        device_id:
+          type: string
+          title: Device Id
+        subscription_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Subscription Id
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+        plan_id:
+          type: string
+          title: Plan Id
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        provisioned_at:
+          type: string
+          format: date-time
+          title: Provisioned At
+        activated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Activated At
+        last_ota_push_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Ota Push At
+        deactivated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Deactivated At
+      type: object
+      required:
+      - iccid
+      - eid
+      - device_id
+      - status
+      - plan_id
+      - preferred_network
+      - provisioned_at
+      title: ESIMProfileResponse
+    ESIMProvisionRequest:
+      properties:
+        device_id:
+          type: string
+          title: Device Id
+          description: Unique identifier of the target device
+        imei:
+          type: string
+          maxLength: 15
+          minLength: 15
+          title: Imei
+          description: 15-digit IMEI of the device requesting eSIM provisioning
+        eid:
+          type: string
+          title: Eid
+          description: eUICC Identifier (EID) embedded in the device's eSIM chip
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+          description: Preferred radio access technology for the provisioned profile
+          default: LTE
+        plan_id:
+          type: string
+          title: Plan Id
+          description: MVNO data-plan identifier to associate with the profile
+        customer_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Id
+          description: Optional Aku-Telhony customer identifier to link the provisioned
+            line
+        metadata:
+          additionalProperties: true
+          type: object
+          title: Metadata
+          description: Optional free-form provisioning context (carrier region, device
+            model, etc.)
+      type: object
+      required:
+      - device_id
+      - imei
+      - eid
+      - plan_id
+      title: ESIMProvisionRequest
+    ESIMProvisionResponse:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+          description: Integrated Circuit Card Identifier — unique profile ID
+        eid:
+          type: string
+          title: Eid
+          description: eUICC Identifier the profile was provisioned to
+        device_id:
+          type: string
+          title: Device Id
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: PENDING
+        activation_code:
+          type: string
+          title: Activation Code
+          description: LPA activation code (AC$ format) used by the device to download
+            the profile
+        qr_code_url:
+          type: string
+          title: Qr Code Url
+          description: URL to the scannable QR code that encodes the activation code
+        subscription_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Subscription Id
+          description: Unified Aku-Telhony subscription identifier for app-facing
+            lifecycle management
+        plan_id:
+          type: string
+          title: Plan Id
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        provisioned_at:
+          type: string
+          format: date-time
+          title: Provisioned At
+      type: object
+      required:
+      - iccid
+      - eid
+      - device_id
+      - activation_code
+      - qr_code_url
+      - plan_id
+      - preferred_network
+      title: ESIMProvisionResponse
+    ESIMStatus:
+      type: string
+      enum:
+      - PENDING
+      - ACTIVE
+      - SWITCHING
+      - DEACTIVATED
+      title: ESIMStatus
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HubPolicyResponse:
+      properties:
+        edge_id:
+          type: string
+          title: Edge Id
+        super_hub_id:
+          type: string
+          title: Super Hub Id
+        education_qos_priority:
+          type: boolean
+          title: Education Qos Priority
+        top_cached_assets:
+          items:
+            type: string
+          type: array
+          title: Top Cached Assets
+        preferred_call_route:
+          type: string
+          title: Preferred Call Route
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+        synced_at:
+          type: string
+          format: date-time
+          title: Synced At
+      type: object
+      required:
+      - edge_id
+      - super_hub_id
+      - education_qos_priority
+      - top_cached_assets
+      - preferred_call_route
+      - allowed_bundles
+      title: HubPolicyResponse
+    HubPolicySyncRequest:
+      properties:
+        edge_id:
+          type: string
+          title: Edge Id
+        super_hub_id:
+          type: string
+          title: Super Hub Id
+        education_qos_priority:
+          type: boolean
+          title: Education Qos Priority
+          default: true
+        top_cached_assets:
+          items:
+            type: string
+          type: array
+          title: Top Cached Assets
+        preferred_call_route:
+          type: string
+          title: Preferred Call Route
+          description: LOCAL_EDGE | SUPER_HUB | MNO_GATEWAY
+          default: LOCAL_EDGE
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+      type: object
+      required:
+      - edge_id
+      - super_hub_id
+      title: HubPolicySyncRequest
+    KYCStatus:
+      type: string
+      enum:
+      - PENDING
+      - VERIFIED
+      - REJECTED
+      title: KYCStatus
+    LineStatusResponse:
+      properties:
+        customer:
+          $ref: '#/components/schemas/CustomerProfileResponse'
+        subscriptions:
+          items:
+            $ref: '#/components/schemas/SubscriptionResponse'
+          type: array
+          title: Subscriptions
+        available_bundles:
+          items:
+            $ref: '#/components/schemas/BundleInfo'
+          type: array
+          title: Available Bundles
+        recent_audit_events:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Recent Audit Events
+      type: object
+      required:
+      - customer
+      title: LineStatusResponse
+    NetworkSwitchAccepted:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+        status:
+          $ref: '#/components/schemas/ESIMStatus'
+          default: SWITCHING
+        task_id:
+          type: string
+          title: Task Id
+          description: Background task identifier for status polling
+        message:
+          type: string
+          title: Message
+          default: OTA network switch initiated — profile status will update to ACTIVE
+            when complete
+        accepted_at:
+          type: string
+          format: date-time
+          title: Accepted At
+      type: object
+      required:
+      - iccid
+      - task_id
+      title: NetworkSwitchAccepted
+    NetworkSwitchRequest:
+      properties:
+        target_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+          description: Network technology to switch the eSIM profile to via OTA
+        target_plan_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Plan Id
+          description: Optional new MVNO plan to associate after the network switch
+        reason:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Reason
+          description: Human-readable reason for the network switch (audit log)
+      type: object
+      required:
+      - target_network
+      title: NetworkSwitchRequest
+    NetworkTechnology:
+      type: string
+      enum:
+      - LTE
+      - LTE-M
+      - NB-IoT
+      - 5G
+      title: NetworkTechnology
+    OTAPushAccepted:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+        task_id:
+          type: string
+          title: Task Id
+          description: Background task identifier for the OTA push job
+        status:
+          type: string
+          title: Status
+          default: QUEUED
+        message:
+          type: string
+          title: Message
+          default: OTA push queued — delivery will complete asynchronously
+        queued_at:
+          type: string
+          format: date-time
+          title: Queued At
+      type: object
+      required:
+      - iccid
+      - task_id
+      title: OTAPushAccepted
+    OTAPushRequest:
+      properties:
+        payload_type:
+          type: string
+          title: Payload Type
+          description: 'OTA payload class: PROFILE_UPDATE | CONFIG_DELTA | DIAGNOSTICS'
+          default: PROFILE_UPDATE
+        payload:
+          additionalProperties: true
+          type: object
+          title: Payload
+          description: Opaque OTA payload forwarded to the MVNO OTA platform
+        priority:
+          type: integer
+          maximum: 10.0
+          minimum: 1.0
+          title: Priority
+          description: Delivery priority (1 = low, 10 = urgent)
+          default: 5
+      type: object
+      title: OTAPushRequest
+    PhysicalSIMResponse:
+      properties:
+        iccid:
+          type: string
+          title: Iccid
+        serial_number:
+          type: string
+          title: Serial Number
+        msisdn:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Msisdn
+        status:
+          $ref: '#/components/schemas/PhysicalSIMStatus'
+        plan_id:
+          type: string
+          title: Plan Id
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        customer_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Id
+        subscription_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Subscription Id
+        device_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Device Id
+        edge_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Edge Id
+        activated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Activated At
+        deactivated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Deactivated At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - iccid
+      - serial_number
+      - status
+      - plan_id
+      - preferred_network
+      title: PhysicalSIMResponse
+    PhysicalSIMStatus:
+      type: string
+      enum:
+      - INVENTORIED
+      - ASSIGNED
+      - ACTIVE
+      - SUSPENDED
+      - REPLACED
+      - DEACTIVATED
+      title: PhysicalSIMStatus
+    PlatformIntegrationResponse:
+      properties:
+        service:
+          type: string
+          title: Service
+        responsibilities:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+          title: Responsibilities
+        exposed_interfaces:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+          title: Exposed Interfaces
+      type: object
+      required:
+      - service
+      - responsibilities
+      - exposed_interfaces
+      title: PlatformIntegrationResponse
+    PlatformMetricsResponse:
+      properties:
+        customers_total:
+          type: integer
+          title: Customers Total
+        subscriptions_total:
+          type: integer
+          title: Subscriptions Total
+        esim_subscriptions_total:
+          type: integer
+          title: Esim Subscriptions Total
+        physical_sims_total:
+          type: integer
+          title: Physical Sims Total
+        physical_sims_active_total:
+          type: integer
+          title: Physical Sims Active Total
+        app_sessions_total:
+          type: integer
+          title: App Sessions Total
+        audit_events_total:
+          type: integer
+          title: Audit Events Total
+        hub_policies_total:
+          type: integer
+          title: Hub Policies Total
+      type: object
+      required:
+      - customers_total
+      - subscriptions_total
+      - esim_subscriptions_total
+      - physical_sims_total
+      - physical_sims_active_total
+      - app_sessions_total
+      - audit_events_total
+      - hub_policies_total
+      title: PlatformMetricsResponse
+    ReadinessResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        checks:
+          additionalProperties:
+            type: string
+          type: object
+          title: Checks
+      type: object
+      required:
+      - status
+      - checks
+      title: ReadinessResponse
+    SIMAssignRequest:
+      properties:
+        customer_id:
+          type: string
+          title: Customer Id
+        device_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Device Id
+        activate_immediately:
+          type: boolean
+          title: Activate Immediately
+          default: false
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+        fulfillment_reference:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fulfillment Reference
+      type: object
+      required:
+      - customer_id
+      title: SIMAssignRequest
+    SIMInventoryRequest:
+      properties:
+        iccid:
+          type: string
+          minLength: 10
+          title: Iccid
+          description: Physical SIM ICCID
+        serial_number:
+          type: string
+          title: Serial Number
+          description: Printed SIM serial number
+        msisdn:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Msisdn
+          description: Assigned Nigerian phone number when available
+        plan_id:
+          type: string
+          title: Plan Id
+          description: Default plan linked to the SIM inventory item
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+          default: LTE
+        edge_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Edge Id
+          description: Preferred Edge Hub for distribution
+        metadata:
+          additionalProperties: true
+          type: object
+          title: Metadata
+      type: object
+      required:
+      - iccid
+      - serial_number
+      - plan_id
+      title: SIMInventoryRequest
+    SIMReplaceRequest:
+      properties:
+        replacement_iccid:
+          type: string
+          title: Replacement Iccid
+          description: New physical SIM ICCID
+        reason:
+          type: string
+          maxLength: 512
+          minLength: 3
+          title: Reason
+      type: object
+      required:
+      - replacement_iccid
+      - reason
+      title: SIMReplaceRequest
+    SimFormFactor:
+      type: string
+      enum:
+      - ESIM
+      - PHYSICAL
+      title: SimFormFactor
+    SubscriptionResponse:
+      properties:
+        subscription_id:
+          type: string
+          title: Subscription Id
+        customer_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Customer Id
+        form_factor:
+          $ref: '#/components/schemas/SimFormFactor'
+        sim_identifier:
+          type: string
+          title: Sim Identifier
+        device_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Device Id
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        plan_id:
+          type: string
+          title: Plan Id
+        preferred_network:
+          $ref: '#/components/schemas/NetworkTechnology'
+        activation_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Activation Code
+        qr_code_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Qr Code Url
+        allowed_bundles:
+          items:
+            type: string
+          type: array
+          title: Allowed Bundles
+        activated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Activated At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - subscription_id
+      - form_factor
+      - sim_identifier
+      - status
+      - plan_id
+      - preferred_network
+      title: SubscriptionResponse
+    SubscriptionStatus:
+      type: string
+      enum:
+      - PENDING
+      - READY
+      - ACTIVE
+      - SUSPENDED
+      - SWITCHING
+      - DEACTIVATED
+      title: SubscriptionStatus
+    UserRole:
+      type: string
+      enum:
+      - STUDENT
+      - TEACHER
+      - STAFF
+      - ADMIN
+      title: UserRole
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
