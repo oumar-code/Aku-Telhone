@@ -5,7 +5,7 @@ Aku-Telhone is the connectivity orchestration service for Aku's Nigerian rollout
 - **eSIM lifecycle management** for newer devices
 - **physical SIM inventory and lifecycle management** for the wider Nigerian handset market
 - **customer onboarding and compliance hooks** for KYC / NIN-linked operations
-- **Aku-Telhony app APIs** for dashboard, activation progress, and line visibility
+- **Aku-Telhone app APIs** for dashboard, activation progress, and line visibility
 - **Edge Hub / Super Hub / IG-Hub integration contracts** for VoIP, policy, and caching coordination
 - **observability endpoints** for health, readiness, and Prometheus metrics
 
@@ -120,7 +120,7 @@ Every line is represented as a unified subscription with:
 - `preferred_network`
 - activation status and timestamps
 
-This allows the Aku-Telhony app to treat eSIM and physical SIM lines consistently.
+This allows the Aku-Telhone app to treat eSIM and physical SIM lines consistently.
 
 ### Compliance hooks
 Customer onboarding stores:

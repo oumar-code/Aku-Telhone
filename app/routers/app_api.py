@@ -1,4 +1,4 @@
-"""Consumer application APIs for Aku-Telhony clients."""
+"""Consumer application APIs for Aku-Telhone clients."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/v1/app", tags=["app"])
     "/sessions",
     response_model=AppSessionResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create an Aku-Telhony app session",
+    summary="Create an Aku-Telhone app session",
 )
 async def create_app_session(body: AppSessionRequest) -> AppSessionResponse:
     try:
@@ -34,7 +34,7 @@ async def create_app_session(body: AppSessionRequest) -> AppSessionResponse:
 @router.get(
     "/customers/{customer_id}/dashboard",
     response_model=LineStatusResponse,
-    summary="Get customer dashboard data for the Aku-Telhony app",
+    summary="Get customer dashboard data for the Aku-Telhone app",
 )
 async def get_dashboard(customer_id: str) -> LineStatusResponse:
     try:

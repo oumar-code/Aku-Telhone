@@ -469,7 +469,7 @@ paths:
     post:
       tags:
       - app
-      summary: Create an Aku-Telhony app session
+      summary: Create an Aku-Telhone app session
       operationId: create_app_session_api_v1_app_sessions_post
       requestBody:
         content:
@@ -494,7 +494,7 @@ paths:
     get:
       tags:
       - app
-      summary: Get customer dashboard data for the Aku-Telhony app
+      summary: Get customer dashboard data for the Aku-Telhone app
       operationId: get_dashboard_api_v1_app_customers__customer_id__dashboard_get
       parameters:
       - name: customer_id
@@ -786,7 +786,7 @@ components:
           - type: string
           - type: 'null'
           title: Email
-          description: Primary email used by the Aku-Telhony app
+          description: Primary email used by the Aku-Telhone app
         phone_number:
           anyOf:
           - type: string
@@ -1034,7 +1034,7 @@ components:
           - type: string
           - type: 'null'
           title: Customer Id
-          description: Optional Aku-Telhony customer identifier to link the provisioned
+          description: Optional Aku-Telhone customer identifier to link the provisioned
             line
         metadata:
           additionalProperties: true
@@ -1079,7 +1079,7 @@ components:
           - type: string
           - type: 'null'
           title: Subscription Id
-          description: Unified Aku-Telhony subscription identifier for app-facing
+          description: Unified Aku-Telhone subscription identifier for app-facing
             lifecycle management
         plan_id:
           type: string

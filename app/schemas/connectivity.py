@@ -66,7 +66,7 @@ class CustomerOnboardingRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     full_name: str = Field(..., min_length=3, description="Subscriber full legal name")
-    email: str | None = Field(None, description="Primary email used by the Aku-Telhony app")
+    email: str | None = Field(None, description="Primary email used by the Aku-Telhone app")
     phone_number: str | None = Field(None, description="Primary reachable phone number")
     nin_reference: str | None = Field(
         None,

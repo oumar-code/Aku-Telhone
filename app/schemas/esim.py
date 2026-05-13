@@ -53,7 +53,7 @@ class ESIMProvisionRequest(BaseModel):
     plan_id: str = Field(..., description="MVNO data-plan identifier to associate with the profile")
     customer_id: str | None = Field(
         None,
-        description="Optional Aku-Telhony customer identifier to link the provisioned line",
+        description="Optional Aku-Telhone customer identifier to link the provisioned line",
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -85,7 +85,7 @@ class ESIMProvisionResponse(BaseModel):
     )
     subscription_id: str | None = Field(
         None,
-        description="Unified Aku-Telhony subscription identifier for app-facing lifecycle management",
+        description="Unified Aku-Telhone subscription identifier for app-facing lifecycle management",
     )
     plan_id: str
     preferred_network: NetworkTechnology

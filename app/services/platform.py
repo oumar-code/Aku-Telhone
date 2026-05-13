@@ -196,7 +196,10 @@ class ConnectivityPlatformService:
             raise ValueError(f"Physical SIM {iccid!r} is not assignable in status {sim['status']}")
 
         now = _now()
-        subscription_id = sim.get("subscription_id") or _new_id("sub")
+        current_subscription_id = sim.get("subscription_id")
+        subscription_id = (
+            current_subscription_id if current_subscription_id is not None else _new_id("sub")
+        )
         subscription_status = (
             SubscriptionStatus.ACTIVE if request.activate_immediately else SubscriptionStatus.READY
         )
@@ -247,7 +250,9 @@ class ConnectivityPlatformService:
         if sim is None:
             raise KeyError(iccid)
         if sim.get("subscription_id") is None:
-            raise ValueError(f"Physical SIM {iccid!r} must be assigned before activation")
+            raise ValueError(
+                f"Physical SIM {iccid!r} must be assigned to a customer before activation"
+            )
 
         now = _now()
         sim.update(
@@ -441,14 +446,14 @@ class ConnectivityPlatformService:
                 SubscriptionStatus.SWITCHING,
             }
             next_step = (
-                "Scan QR code in Aku-Telhony app to download the eSIM profile"
+                "Scan QR code in Aku-Telhone app to download the eSIM profile"
                 if subscription.status == SubscriptionStatus.PENDING
                 else "Line is already active"
             )
         else:
             ready = subscription.status in {SubscriptionStatus.READY, SubscriptionStatus.ACTIVE}
             next_step = (
-                "Insert the physical SIM and complete activation in the Aku-Telhony app"
+                "Insert the physical SIM and complete activation in the Aku-Telhone app"
                 if subscription.status == SubscriptionStatus.READY
                 else "Line is already active"
             )
