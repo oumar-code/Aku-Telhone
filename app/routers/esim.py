@@ -18,6 +18,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 
+from app.schemas.connectivity import SubscriptionStatus
 from app.schemas.esim import (
     ESIMDeactivateResponse,
     ESIMProfileResponse,
@@ -31,6 +32,7 @@ from app.schemas.esim import (
 )
 from app.services.esim import esim_service
 from app.services.ota import new_task_id, ota_service
+from app.services.platform import platform_service
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +123,11 @@ async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitc
         )
 
     task_id = new_task_id()
+    if profile.subscription_id:
+        platform_service.update_subscription_status(
+            profile.subscription_id,
+            status=SubscriptionStatus.SWITCHING,
+        )
 
     asyncio.create_task(
         ota_service.switch_network(
@@ -168,6 +175,13 @@ async def deactivate_esim(iccid: str) -> ESIMDeactivateResponse:
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+    profile = await esim_service.get_profile(iccid)
+    if profile.subscription_id:
+        platform_service.update_subscription_status(
+            profile.subscription_id,
+            status=SubscriptionStatus.DEACTIVATED,
+        )
+    return response
 
 
 # ---------------------------------------------------------------------------

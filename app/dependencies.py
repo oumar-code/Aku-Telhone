@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -5,6 +7,7 @@ from jose import JWTError, jwt
 from app.config import settings
 
 bearer_scheme = HTTPBearer()
+bearer_credentials = Depends(bearer_scheme)
 
 
 async def get_current_user(

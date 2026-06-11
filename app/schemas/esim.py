@@ -51,6 +51,10 @@ class ESIMProvisionRequest(BaseModel):
         description="Preferred radio access technology for the provisioned profile",
     )
     plan_id: str = Field(..., description="MVNO data-plan identifier to associate with the profile")
+    customer_id: str | None = Field(
+        None,
+        description="Optional Aku-Telhone customer identifier to link the provisioned line",
+    )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Optional free-form provisioning context (carrier region, device model, etc.)",
@@ -79,6 +83,10 @@ class ESIMProvisionResponse(BaseModel):
         ...,
         description="URL to the scannable QR code that encodes the activation code",
     )
+    subscription_id: str | None = Field(
+        None,
+        description="Unified Aku-Telhone subscription identifier for app-facing lifecycle management",
+    )
     plan_id: str
     preferred_network: NetworkTechnology
     provisioned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -95,6 +103,7 @@ class ESIMProfileResponse(BaseModel):
     iccid: str
     eid: str
     device_id: str
+    subscription_id: str | None = None
     status: ESIMStatus
     plan_id: str
     preferred_network: NetworkTechnology
