@@ -11,7 +11,7 @@ bearer_credentials = Depends(bearer_scheme)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = bearer_credentials,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),  # noqa: B008
 ) -> dict:
     token = credentials.credentials
     try:

@@ -109,7 +109,7 @@ async def get_esim_profile(iccid: str) -> ESIMProfileResponse:
 )
 async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitchAccepted:
     try:
-        profile = await esim_service.get_profile(iccid)
+        await esim_service.get_profile(iccid)
     except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -164,7 +164,7 @@ async def switch_network(iccid: str, body: NetworkSwitchRequest) -> NetworkSwitc
 )
 async def deactivate_esim(iccid: str) -> ESIMDeactivateResponse:
     try:
-        response = await esim_service.deactivate(iccid)
+        return await esim_service.deactivate(iccid)
     except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
