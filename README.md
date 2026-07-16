@@ -1,216 +1,144 @@
-# Aku-Telhone — Nigeria Connectivity Platform
+# Aku-Telhone — eSIM Provisioning & MVNO Connectivity Service
 
-Aku-Telhone is the connectivity orchestration service for Aku's Nigerian rollout. It now supports:
+Aku-Telhone is the eSIM provisioning and MVNO connectivity service for the Akulearn platform. It manages the full eSIM profile lifecycle — from SM-DP+ provisioning through OTA network switching — and delegates device attestation to **Aku-IGHub**.
 
-- **eSIM lifecycle management** for newer devices
-- **physical SIM inventory and lifecycle management** for the wider Nigerian handset market
-- **customer onboarding and compliance hooks** for KYC / NIN-linked operations
-- **Aku-Telhone app APIs** for dashboard, activation progress, and line visibility
-- **Edge Hub / Super Hub / IG-Hub integration contracts** for VoIP, policy, and caching coordination
-- **observability endpoints** for health, readiness, and Prometheus metrics
-
-> The repository still uses in-memory stores for prototype flows. Replace them with durable database / Redis-backed implementations before production rollout.
+> **Migration note:** The prior Node.js stub contained generic telephony CRUD (calls, SMS). All such endpoints have been **removed**. This Python/FastAPI scaffold replaces them entirely with the eSIM provisioning domain described below.
 
 ---
 
-## Platform scope
+## Endpoints
 
-### Aku-Telhone owns
-- eSIM provisioning, OTA switching, and deactivation
-- physical SIM inventory, assignment, activation, suspension, replacement, and deactivation
-- unified subscription records across eSIM and physical SIM lines
-- customer onboarding metadata, bundle eligibility, and compliance state hooks
-- app-facing APIs for activation and line management
-- hub policy synchronization and connectivity metadata exposure
-
-### Adjacent services own
-- **Edge Hub**: local SIP registration, RTP relay, edge cache delivery, local call offload
-- **Super Hub**: regional softswitch, predictive prefetch orchestration, mediation/CDR collection
-- **IG-Hub**: global policy, SIM policy authority, cross-region routing and clearing, attestation federation
-
-Aku-Telhone exposes the provisioning and policy interfaces those services consume, but it does **not** embed Kamailio, FreeSWITCH, or cache engines directly.
-
----
-
-## API surface
-
-### eSIM APIs
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/esim/provision` | Provision a new eSIM and create a unified subscription |
-| `GET` | `/api/v1/esim/{iccid}` | Fetch eSIM profile state |
-| `PATCH` | `/api/v1/esim/{iccid}/switch-network` | Trigger OTA network switch |
-| `POST` | `/api/v1/esim/{iccid}/ota-push` | Trigger OTA push |
+| `POST` | `/api/v1/esim/provision` | Provision a new eSIM profile → returns `iccid`, `activation_code`, `qr_code_url` |
+| `GET` | `/api/v1/esim/{iccid}` | Get eSIM profile status (`PENDING` \| `ACTIVE` \| `SWITCHING` \| `DEACTIVATED`) |
+| `PATCH` | `/api/v1/esim/{iccid}/switch-network` | OTA network switch (MVNO) — **202 Accepted**, background task |
 | `DELETE` | `/api/v1/esim/{iccid}` | Deactivate eSIM profile |
-
-### Physical SIM APIs
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/v1/sims/inventory` | Register SIM stock |
-| `GET` | `/api/v1/sims/{iccid}` | Fetch physical SIM record |
-| `POST` | `/api/v1/sims/{iccid}/assign` | Bind SIM to customer / device |
-| `POST` | `/api/v1/sims/{iccid}/activate` | Activate assigned physical SIM |
-| `POST` | `/api/v1/sims/{iccid}/suspend` | Suspend SIM and linked subscription |
-| `POST` | `/api/v1/sims/{iccid}/replace` | Replace SIM with a new physical SIM |
-| `DELETE` | `/api/v1/sims/{iccid}` | Deactivate physical SIM |
-
-### Customer and app APIs
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/v1/customers/onboard` | Create customer profile with compliance hooks |
-| `GET` | `/api/v1/customers/{customer_id}` | Fetch customer profile |
-| `GET` | `/api/v1/customers/{customer_id}/lines` | List subscriptions, bundles, and audit events |
-| `POST` | `/api/v1/app/sessions` | Create app session for mobile/web clients |
-| `GET` | `/api/v1/app/customers/{customer_id}/dashboard` | App dashboard payload |
-| `GET` | `/api/v1/app/subscriptions/{subscription_id}/activation` | Poll activation progress and next steps |
-| `GET` | `/api/v1/subscriptions/{subscription_id}` | Unified subscription record |
-
-### Integration and ops APIs
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/v1/devices/{device_id}/attest` | Proxy device attestation to Aku-IGHub |
-| `GET` | `/api/v1/platform/integration-contracts` | Service-boundary contract for Edge/Super/IG hubs |
-| `POST` | `/api/v1/platform/hub-policy-sync` | Sync edge policy and predictive cache hints |
-| `GET` | `/api/v1/platform/hub-policy-sync/{edge_id}` | Get latest Edge Hub policy |
-| `GET` | `/api/v1/platform/metrics` | Structured JSON metrics snapshot |
-| `GET` | `/health` | Liveness probe |
-| `GET` | `/readyz` | Readiness probe |
-| `GET` | `/metrics` | Prometheus metrics |
+| `POST` | `/api/v1/esim/{iccid}/ota-push` | Trigger direct OTA push — **202 Accepted**, background task |
+| `POST` | `/api/v1/devices/{id}/attest` | Device attestation → proxies to Aku-IGHub |
 
 ---
 
-## Quick start
+## Quick Start
 
 ```bash
 # 1. Copy environment config
 cp .env.example .env
+# Edit .env — set SMDP_API_KEY, OTA_PLATFORM_API_KEY, AKU_IGHUB_API_KEY, JWT_PUBLIC_KEY_PATH
 
 # 2. Install dependencies
-pip install -r requirements.txt -r requirements-extra.txt -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-extra.txt
 
-# 3. Run the API
+# 3. Run (development)
 uvicorn app.main:app --reload --port 8001
 ```
 
-Interactive docs:
-- Swagger UI: `http://localhost:8001/api/docs`
-- OpenAPI JSON: `http://localhost:8001/api/openapi.json`
+Interactive docs: http://localhost:8001/docs
 
 ---
 
-## Validation
+## Project Layout
 
-```bash
-ruff check .
-black --check .
-PYTHONPATH=. pytest --cov=app --cov-report=term-missing -v
 ```
-
----
-
-## Nigeria-market domain model
-
-### Shared subscription model
-Every line is represented as a unified subscription with:
-- `subscription_id`
-- `customer_id`
-- `form_factor` = `ESIM` or `PHYSICAL`
-- `sim_identifier`
-- `plan_id`
-- `preferred_network`
-- activation status and timestamps
-
-This allows the Aku-Telhone app to treat eSIM and physical SIM lines consistently.
-
-### Compliance hooks
-Customer onboarding stores:
-- customer identity metadata
-- role-based eligibility (`STUDENT`, `TEACHER`, `STAFF`, `ADMIN`)
-- allowed bundles
-- `nin_reference` instead of raw NIN storage
-- `kyc_status` and `compliance_status`
-
-### Physical SIM lifecycle
-```text
-INVENTORIED -> ASSIGNED -> ACTIVE -> SUSPENDED
-      |            |
-      |            +-> REPLACED
-      +-----------------> DEACTIVATED
-```
-
-### eSIM lifecycle
-```text
-PENDING -> ACTIVE -> SWITCHING -> ACTIVE
-   |
-   +-> DEACTIVATED
-```
-
----
-
-## Hub and caching integration model
-
-### Edge Hub
-- local SIP registration and low-latency call routing
-- RTP/media relay
-- edge cache for community-priority content
-- local QoS enforcement for education traffic
-
-### Super Hub
-- regional call control and federation
-- predictive content prefetch orchestration
-- mediation / billing event aggregation
-- routing optimization support
-
-### IG-Hub
-- global policy authority
-- SIM policy and interconnect governance
-- cross-state routing and provisioning decisions
-
-Aku-Telhone contributes:
-- subscriber policy metadata
-- bundle eligibility
-- edge policy sync payloads
-- activation and line state required by upstream call-routing services
-
----
-
-## Project layout
-
-```text
 Aku-Telhone/
 ├── app/
-│   ├── main.py
-│   ├── core/config.py
+│   ├── main.py                        # FastAPI app factory & router registration
+│   ├── core/
+│   │   └── config.py                  # Pydantic-settings config (reads .env)
 │   ├── routers/
-│   │   ├── esim.py
-│   │   ├── sims.py
-│   │   ├── customers.py
-│   │   ├── app_api.py
-│   │   ├── platform.py
-│   │   └── devices.py
+│   │   ├── esim.py                    # eSIM lifecycle endpoints
+│   │   └── devices.py                 # Device attestation → Aku-IGHub proxy
 │   ├── schemas/
-│   │   ├── esim.py
-│   │   └── connectivity.py
+│   │   └── esim.py                    # Pydantic v2 request/response models + ESIMStatus enum
 │   └── services/
-│       ├── esim.py
-│       ├── ota.py
-│       └── platform.py
-├── tests/
-│   ├── conftest.py
-│   ├── test_health.py
-│   └── test_connectivity_platform.py
-├── openapi.yaml
-└── .env.example
+│       ├── esim.py                    # ESIMService — provisioning, status, deactivation
+│       └── ota.py                     # OTAService — async background OTA push & network switch
+├── requirements-extra.txt             # Telhone-specific extra deps
+└── .env.example                       # Environment variable template
 ```
 
 ---
 
-## Production hardening still required
+## eSIM Provisioning Flow
 
-Before a production Nigerian rollout, replace prototype pieces with:
-- persistent customer / SIM / subscription storage
-- durable background job orchestration for OTA operations
-- authenticated app sessions and operator access control
-- real SM-DP+, OTA, and compliance-provider integrations
-- event publication to Edge Hub / Super Hub / IG-Hub infrastructure
-- production Prometheus / tracing / audit pipelines
+```
+Client                    Aku-Telhone               SM-DP+              Device (LPA)
+  │                            │                       │                      │
+  │ POST /esim/provision        │                       │                      │
+  │ ──────────────────────────► │                       │                      │
+  │                            │── allocate profile ──► │                      │
+  │                            │◄── iccid + AC$ ────── │                      │
+  │ ◄── 201 { iccid,           │                       │                      │
+  │          activation_code,  │                       │                      │
+  │          qr_code_url }     │                       │                      │
+  │                            │                       │                      │
+  │                            │                       │◄── profile download ─ │
+  │                            │                       │── profile data ──────► │
+```
+
+---
+
+## OTA Background Tasks
+
+`PATCH /{iccid}/switch-network` and `POST /{iccid}/ota-push` both return **HTTP 202 Accepted** immediately. The delivery is performed by `app/services/ota.py` running as an `asyncio.create_task()` background coroutine within the event loop.
+
+Each task is assigned a `task_id` (`ota-<uuid4>`) returned in the response. Poll `GET /api/v1/esim/{iccid}` to confirm the operation completed (`ACTIVE` status).
+
+In production, replace the in-process task registry and profile store in `ota.py` with Redis-backed persistence for durability across restarts.
+
+---
+
+## Device Attestation
+
+`POST /api/v1/devices/{id}/attest` proxies the attestation token to **Aku-IGHub** at `AKU_IGHUB_URL/api/v1/devices/attest`. Configure `AKU_IGHUB_URL` and `AKU_IGHUB_API_KEY` in `.env`.
+
+IGHub returns a trust level (`FULL | LIMITED | UNTRUSTED`) used to gate eSIM provisioning in production flows.
+
+---
+
+## ESIMStatus Lifecycle
+
+```
+  PENDING ──► ACTIVE ──► SWITCHING ──► ACTIVE
+                │
+                └──────────────────────────── DEACTIVATED (terminal)
+```
+
+| Status | Meaning |
+|---|---|
+| `PENDING` | Profile allocated; device has not yet downloaded it via LPA |
+| `ACTIVE` | Profile downloaded and active on the device |
+| `SWITCHING` | OTA network switch in progress |
+| `DEACTIVATED` | Profile permanently deactivated (terminal state) |
+
+---
+
+## Configuration Reference
+
+| Variable | Default | Description |
+|---|---|---|
+| `APP_ENV` | `development` | Runtime environment |
+| `JWT_ALGORITHM` | `RS256` | JWT verification algorithm |
+| `JWT_PUBLIC_KEY_PATH` | `/secrets/jwt_public.pem` | PEM path for token verification |
+| `SMDP_BASE_URL` | — | SM-DP+ server base URL |
+| `SMDP_API_KEY` | `changeme` | SM-DP+ API key |
+| `MVNO_OPERATOR_ID` | `akulearn-mvno` | Operator ID registered with MVNO |
+| `QR_BASE_URL` | — | QR code image service base URL |
+| `OTA_PLATFORM_URL` | — | MVNO OTA push platform endpoint |
+| `OTA_PLATFORM_API_KEY` | `changeme` | OTA platform API key |
+| `OTA_TIMEOUT_SECONDS` | `30` | OTA acknowledgment timeout |
+| `AKU_IGHUB_URL` | — | Aku-IGHub service URL |
+| `AKU_IGHUB_API_KEY` | `changeme` | Service-to-service key for IGHub |
+| `IGHUB_TIMEOUT_SECONDS` | `10` | IGHub call timeout |
+| `ALLOWED_ORIGINS` | — | Comma-separated CORS allowed origins |
+| `RATE_LIMIT_PER_MINUTE` | `60` | API rate limit per client per minute |
+
+---
+
+## Migration Notes (Node.js → Python/FastAPI)
+
+- **Generic telephony CRUD removed** — calls and SMS endpoints in the Node.js stub are not ported.
+- Auth moves from Express middleware to FastAPI `Depends(get_current_user)` — injected per-router.
+- `asyncio.create_task()` replaces Node.js worker threads / `setImmediate` for OTA background work.
+- Pydantic v2 `ConfigDict` style is used throughout — no `class Config` blocks.
+- All `httpx` calls use `async with` context managers; timeouts are enforced via `settings`.

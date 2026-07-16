@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.core.config import settings
-from app.schemas.connectivity import SubscriptionStatus
 from app.schemas.esim import (
     ESIMDeactivateResponse,
     ESIMProfileResponse,
@@ -23,7 +22,6 @@ from app.schemas.esim import (
     NetworkTechnology,
 )
 from app.services.ota import _profile_store, _upsert_profile
-from app.services.platform import platform_service
 
 logger = logging.getLogger(__name__)
 
@@ -79,33 +77,21 @@ class ESIMService:
         iccid = _generate_iccid(request.eid)
 
         if iccid in _profile_store:
-            logger.warning(
-                "Duplicate provisioning request for EID %s (iccid=%s)", request.eid, iccid
-            )
+            logger.warning("Duplicate provisioning request for EID %s (iccid=%s)", request.eid, iccid)
 
         activation_code = _generate_activation_code(iccid)
         qr_code_url = _qr_code_url(iccid, activation_code)
         now = datetime.now(timezone.utc)
-        subscription_id = platform_service.upsert_esim_subscription(
-            customer_id=request.customer_id,
-            iccid=iccid,
-            device_id=request.device_id,
-            plan_id=request.plan_id,
-            preferred_network=request.preferred_network,
-            activation_code=activation_code,
-            qr_code_url=qr_code_url,
-            status=SubscriptionStatus.PENDING,
-        )
 
         _upsert_profile(
             iccid,
+            iccid=iccid,
             eid=request.eid,
             device_id=request.device_id,
             imei=request.imei,
             status=ESIMStatus.PENDING,
             plan_id=request.plan_id,
             preferred_network=request.preferred_network,
-            subscription_id=subscription_id,
             activation_code=activation_code,
             qr_code_url=qr_code_url,
             provisioned_at=now.isoformat(),
@@ -124,7 +110,6 @@ class ESIMService:
             status=ESIMStatus.PENDING,
             activation_code=activation_code,
             qr_code_url=qr_code_url,
-            subscription_id=subscription_id,
             plan_id=request.plan_id,
             preferred_network=request.preferred_network,
             provisioned_at=now,
@@ -184,7 +169,6 @@ class ESIMService:
             iccid=record["iccid"],
             eid=record["eid"],
             device_id=record["device_id"],
-            subscription_id=record.get("subscription_id"),
             status=ESIMStatus(record["status"]),
             plan_id=record["plan_id"],
             preferred_network=NetworkTechnology(record["preferred_network"]),
