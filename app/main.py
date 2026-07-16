@@ -8,8 +8,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
-from app.routers import app_api, customers, devices, esim, platform, sims
+from app.routers import devices, esim
 
 
 @asynccontextmanager
@@ -22,10 +21,9 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Aku-Telhone",
         description=(
-            "Connectivity orchestration platform for the Aku ecosystem. Handles eSIM and "
-            "physical SIM lifecycle management, customer onboarding, app-facing activation "
-            "flows, hub policy integration, observability, and device attestation via "
-            "Aku-IGHub."
+            "eSIM provisioning and OTA lifecycle management service for the Aku Platform. "
+            "Handles eSIM profile provisioning, status tracking, OTA network switching, "
+            "profile deactivation, and device attestation via Aku-IGHub."
         ),
         version="0.1.0",
         docs_url="/api/docs",
@@ -36,7 +34,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[origin.strip() for origin in settings.allowed_origins.split(",") if origin],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -44,18 +42,10 @@ def create_app() -> FastAPI:
 
     app.include_router(esim.router)
     app.include_router(devices.router)
-    app.include_router(customers.router)
-    app.include_router(sims.router)
-    app.include_router(app_api.router)
-    app.include_router(platform.router)
 
     @app.get("/health", tags=["ops"])
     async def health() -> dict[str, str]:
-        return {
-            "status": "ok",
-            "service": "Aku-Telhone",
-            "scope": "connectivity-platform",
-        }
+        return {"status": "ok", "service": "Aku-Telhone"}
 
     return app
 

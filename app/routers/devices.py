@@ -42,7 +42,7 @@ _IGHUB_ATTEST_PATH = "/api/v1/devices/attest"
 async def attest_device(device_id: str, body: DeviceAttestRequest) -> DeviceAttestResponse:
     if body.device_id != device_id:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Path device_id and body device_id must match",
         )
 

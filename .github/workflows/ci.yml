@@ -45,10 +45,11 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql+asyncpg://aku:aku@localhost:5432/aku_test
           JWT_SECRET_KEY: test-secret-key
-          PYTHONPATH: .
-        run: pytest --cov=app --cov-report=xml -v
+        run: |
+          DB_USER=aku DB_PASS=aku
+          export DATABASE_URL="postgresql+asyncpg://${DB_USER}:${DB_PASS}@localhost:5432/aku_test"
+          python -m pytest --cov=app --cov-report=xml -v
 
   docker:
     runs-on: ubuntu-latest
